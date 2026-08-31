@@ -270,7 +270,7 @@
       try {
         const [configRes, dbRes] = await Promise.all([
           fetch('./option.json'),
-          fetch('./ambigram_database.json')
+          fetch('./database.json')
         ]);
 
         if (configRes.ok) {
@@ -282,7 +282,7 @@
         if (dbRes.ok) {
           database = await dbRes.json();
         } else {
-          console.error("ambigram_database.json の読み込みに失敗しました");
+          console.error("database.json の読み込みに失敗しました");
         }
       } catch (error) {
         console.error("JSONデータの読み込み中にエラーが発生しました:", error);
@@ -516,7 +516,7 @@
       const updatedDatabase = [...database, newItem];
 
       try {
-        await commitToGitHub("ambigram_database.json", updatedDatabase, `Add entry: ${title}`);
+        await commitToGitHub("database.json", updatedDatabase, `Add entry: ${title}`);
         
         database = updatedDatabase;
 
