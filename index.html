@@ -20,31 +20,6 @@
         </div>
         <h1 class="font-bold text-xl text-gray-900 tracking-tight">アンビグラムデータベース</h1>
       </div>
-
-      <!-- 設定・JSON操作ボタン -->
-      <div class="flex items-center gap-2">
-        <button onclick="exportFilterConfig()" title="設定を出力 (option.json)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
-          <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-          <span>設定保存</span>
-        </button>
-        <button onclick="document.getElementById('filterFileInput').click()" title="設定を読み込み" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
-          <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
-          <span>設定読込</span>
-        </button>
-        <input type="file" id="filterFileInput" accept=".json" class="hidden" onchange="importFilterConfig(event)">
-
-        <div class="h-4 w-px bg-gray-300 mx-1"></div>
-
-        <button onclick="exportJSON()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
-          <i data-lucide="download" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">Export (DB)</span>
-        </button>
-        <button onclick="document.getElementById('fileInput').click()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
-          <i data-lucide="upload" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">Import (DB)</span>
-        </button>
-        <input type="file" id="fileInput" accept=".json" class="hidden" onchange="importJSON(event)">
-      </div>
     </div>
   </header>
 
@@ -107,57 +82,6 @@
         </div>
       </div>
 
-      <!-- 新規追加フォーム -->
-      <details class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden group">
-        <summary class="flex items-center justify-between px-6 py-4 cursor-pointer select-none font-semibold text-gray-800 hover:bg-gray-50 transition-colors">
-          <span class="flex items-center gap-2">
-            <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
-            新規作品の追加
-          </span>
-          <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform"></i>
-        </summary>
-        
-        <div class="p-6 border-t border-gray-100 bg-gray-50/50 space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">タイトル <span class="text-red-500">*</span></label>
-              <input type="text" id="newTitle" placeholder="作品タイトル" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">制作者名</label>
-              <input type="text" id="newAuthor" placeholder="作者名" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">投稿URL</label>
-              <input type="text" id="newUrl" placeholder="https://..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">作字タイプ</label>
-              <input type="text" id="newArtType" placeholder="例: 教育文字, アンビグラム" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Ktype (カンマ区切り)</label>
-              <input type="text" id="newKtypes" placeholder="ktype1, ktype2..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Atype (カンマ区切り)</label>
-              <input type="text" id="newAtypes" placeholder="atype1, atype2..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Tag</label>
-              <input type="text" id="newTag" placeholder="タグ名" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-          </div>
-          
-          <div class="flex justify-end pt-2">
-            <button onclick="addData()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-medium text-sm rounded-lg hover:bg-indigo-700 transition-colors shadow-md">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              追加する
-            </button>
-          </div>
-        </div>
-      </details>
-
     </div>
 
     <!-- ギャラリーグリッド -->
@@ -179,20 +103,34 @@
       tag:     { active: 'bg-amber-100 text-amber-800 border-amber-300 font-bold shadow-sm ring-1 ring-amber-400', prefix: '#' }
     };
 
-    window.onload = function() {
-      // ローカルストレージからの読み込み
-      const savedDb = localStorage.getItem('ambigram_db_v3_data');
-      if (savedDb) {
-        try { database = JSON.parse(savedDb); } catch(e) { console.error(e); }
-      }
-
-      const savedConfig = localStorage.getItem('ambigram_filter_config');
-      if (savedConfig) {
-        try { filterConfig = JSON.parse(savedConfig); } catch(e) { console.error(e); }
-      }
-
+    window.onload = async function() {
+      await loadInitialData();
       renderUI();
     };
+
+    // 同一階層のJSONファイルを自動取得
+    async function loadInitialData() {
+      try {
+        const [configRes, dbRes] = await Promise.all([
+          fetch('./option.json'),
+          fetch('./ambigram_database.json')
+        ]);
+
+        if (configRes.ok) {
+          filterConfig = await configRes.json();
+        } else {
+          console.error("option.json の読み込みに失敗しました");
+        }
+
+        if (dbRes.ok) {
+          database = await dbRes.json();
+        } else {
+          console.error("ambigram_database.json の読み込みに失敗しました");
+        }
+      } catch (error) {
+        console.error("JSONデータの読み込み中にエラーが発生しました:", error);
+      }
+    }
 
     // 一括再描画・更新処理
     function renderUI() {
@@ -325,7 +263,6 @@
       }
 
       data.forEach((item) => {
-        const origIndex = database.indexOf(item);
         const ktypes = Object.keys(item).filter(k => k.startsWith('ktype') && item[k]).map(k => item[k]);
         const atypes = Object.keys(item).filter(a => a.startsWith('atype') && item[a]).map(a => item[a]);
         const tag = item.Tag || item.tag || '';
@@ -339,19 +276,14 @@
               <div class="w-20 h-20 rounded-2xl bg-white/80 backdrop-blur shadow-sm flex items-center justify-center text-indigo-600 text-3xl font-black transition-transform group-hover:scale-105">
                 ${initial}
               </div>
-              <button onclick="deleteData(${origIndex})" title="削除" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 hover:bg-red-50 text-gray-400 hover:text-red-600 flex items-center justify-center transition-colors shadow-sm">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
             </div>
 
             <div class="p-5 space-y-4">
               <div>
                 <div class="flex items-start justify-between gap-2 mb-1">
-                  <h3 
-                    contenteditable="true" 
-                    onblur="updateData(${origIndex}, 'title', this.innerText)"
-                    class="font-bold text-gray-900 text-lg leading-snug outline-none focus:bg-indigo-50/50 rounded px-1 transition-colors"
-                  >${item.title || '無題'}</h3>
+                  <h3 class="font-bold text-gray-900 text-lg leading-snug px-1">
+                    ${item.title || '無題'}
+                  </h3>
 
                   ${item.artType ? `
                     <span class="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
@@ -361,7 +293,7 @@
                 </div>
 
                 <p class="text-sm text-gray-500 px-1">
-                  作者: <span contenteditable="true" onblur="updateData(${origIndex}, 'author', this.innerText)" class="outline-none focus:bg-indigo-50/50 rounded">${item.author || '未設定'}</span>
+                  作者: <span>${item.author || '未設定'}</span>
                 </p>
               </div>
 
@@ -391,104 +323,6 @@
       });
 
       lucide.createIcons();
-    }
-
-    // データ編集・追加・削除
-    function updateData(index, key, value) {
-      database[index][key] = value.trim();
-      localStorage.setItem('ambigram_db_v3_data', JSON.stringify(database));
-    }
-
-    function addData() {
-      const title = document.getElementById("newTitle").value.trim();
-      if (!title) { alert("タイトルを入力してください。"); return; }
-
-      const newItem = {
-        title,
-        author: document.getElementById("newAuthor").value.trim(),
-        url: document.getElementById("newUrl").value.trim(),
-        artType: document.getElementById("newArtType").value.trim()
-      };
-
-      const ktypes = document.getElementById("newKtypes").value.split(',').map(s => s.trim()).filter(Boolean);
-      const atypes = document.getElementById("newAtypes").value.split(',').map(s => s.trim()).filter(Boolean);
-      const tag = document.getElementById("newTag").value.trim();
-
-      ktypes.forEach((v, idx) => { newItem[`ktype${idx + 1}`] = v; });
-      atypes.forEach((v, idx) => { newItem[`atype${idx + 1}`] = v; });
-      if (tag) newItem["Tag"] = tag;
-
-      database.push(newItem);
-      localStorage.setItem('ambigram_db_v3_data', JSON.stringify(database));
-
-      // フォームリセット
-      ["newTitle", "newAuthor", "newUrl", "newArtType", "newKtypes", "newAtypes", "newTag"].forEach(id => {
-        document.getElementById(id).value = "";
-      });
-
-      applyFilters();
-    }
-
-    function deleteData(index) {
-      if (confirm("本当に削除しますか？")) {
-        database.splice(index, 1);
-        localStorage.setItem('ambigram_db_v3_data', JSON.stringify(database));
-        applyFilters();
-      }
-    }
-
-    // データベース JSON 出入力
-    function exportJSON() {
-      downloadFile(JSON.stringify(database, null, 2), "ambigram_database.json");
-    }
-
-    function importJSON(event) {
-      readFile(event, (data) => {
-        if (Array.isArray(data)) {
-          database = data;
-          localStorage.setItem('ambigram_db_v3_data', JSON.stringify(database));
-          applyFilters();
-          alert("JSONデータを読み込みました。");
-        }
-      });
-    }
-
-    // 設定 JSON 出入力
-    function exportFilterConfig() {
-      downloadFile(JSON.stringify(filterConfig, null, 2), "option.json");
-    }
-
-    function importFilterConfig(event) {
-      readFile(event, (data) => {
-        if (typeof data === 'object' && !Array.isArray(data)) {
-          filterConfig = data;
-          localStorage.setItem('ambigram_filter_config', JSON.stringify(filterConfig));
-          renderUI();
-          alert("設定ファイル (option.json) を読み込みました。");
-        }
-      });
-    }
-
-    // 共通ユーティリティ関数
-    function downloadFile(content, fileName) {
-      const anchor = document.createElement('a');
-      anchor.href = "data:text/json;charset=utf-8," + encodeURIComponent(content);
-      anchor.download = fileName;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-    }
-
-    function readFile(event, callback) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try { callback(JSON.parse(e.target.result)); }
-        catch (err) { alert("JSONファイルの解析に失敗しました。"); }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
     }
   </script>
 </body>
