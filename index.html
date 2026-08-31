@@ -486,6 +486,42 @@
       renderCards(filtered);
     }
 
+    // Twitter/X のURLを正規化する関数
+    function normalizeTwitterUrl(urlStr) {
+      if (!urlStr) return '';
+      let url = urlStr.trim();
+
+      // プロトコル（https://）が無い場合に補完
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+
+      try {
+        const parsed = new URL(url);
+        // x.com または twitter.com のポストURLか判定
+        if (parsed.hostname.includes('x.com') || parsed.hostname.includes('twitter.com')) {
+          // ? 以降のクエリパラメータを削除したパスを取得
+          let pathname = parsed.pathname;
+
+          // /photo/ や /video/ などのメディア指定以降を切り捨て
+          pathname = pathname.replace(/\/(photo|video)\/.*$/i, '');
+
+          // 末尾の余計なスラッシュを整形
+          pathname = pathname.replace(/\/+$/, '');
+
+          return `https://${parsed.hostname}${pathname}`;
+        }
+      } catch (e) {
+        // URLオブジェクトにパースできない場合は正規表現でフォールバック処理
+        let cleaned = url.split('?')[0]; // ? 以降削除
+        cleaned = cleaned.replace(/\/(photo|video)\/.*$/i, ''); // /photo/ 以降削除
+        cleaned = cleaned.replace(/\/+$/, '');
+        return cleaned;
+      }
+
+      return url;
+    }
+
     // 新規作品の追加処理（GitHub API連携）
     async function addData() {
       if (!ghConfig.owner || !ghConfig.repo || !ghConfig.token) {
@@ -497,6 +533,10 @@
       const title = document.getElementById("newTitle").value.trim();
       if (!title) { alert("タイトルを入力してください。"); return; }
 
+      // URLの整形処理を通す
+      const rawUrl = document.getElementById("newUrl").value.trim();
+      const normalizedUrl = normalizeTwitterUrl(rawUrl);
+
       const btn = document.getElementById("addSubmitBtn");
       btn.disabled = true;
       btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>保存中...</span>`;
@@ -505,7 +545,7 @@
       const newItem = {
         title,
         author: document.getElementById("newAuthor").value.trim(),
-        url: document.getElementById("newUrl").value.trim(),
+        url: normalizedUrl,
         artType: newFormSelection.artTypes.join(', ')
       };
 
