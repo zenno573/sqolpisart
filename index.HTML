@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>作字データベース</title>
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased min-h-screen">
+
+  <!-- ヘッダー -->
+  <header class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
+          A
+        </div>
+        <h1 class="font-bold text-xl text-gray-900 tracking-tight">作字データベース</h1>
+      </div>
+
+      <!-- JSON操作ボタン -->
+      <div class="flex items-center gap-2">
+        <!-- フィルター設定管理 -->
+        <button onclick="exportFilterConfig()" title="フィルター設定を出力" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+          <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+          <span>設定保存</span>
+        </button>
+        <button onclick="document.getElementById('filterFileInput').click()" title="フィルター設定を読み込み" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+          <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+          <span>設定読込</span>
+        </button>
+        <input type="file" id="filterFileInput" accept=".json" class="hidden" onchange="importFilterConfig(event)">
+
+        <div class="h-4 w-px bg-gray-300 mx-1"></div>
+
+        <!-- DBデータ管理 -->
+        <button onclick="exportJSON()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Export (DB)</span>
+        </button>
+        <button onclick="document.getElementById('fileInput').click()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Import (DB)</span>
+        </button>
+        <input type="file" id="fileInput" accept=".json" class="hidden" onchange="importJSON(event)">
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- 検索 & フィルターエリア -->
+    <div class="space-y-6">
+      
+      <!-- 検索バー & 簡易統計 -->
+      <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div class="relative w-full sm:w-96">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+          <input 
+            type="text" 
+            id="searchInput"
+            placeholder="タイトル、作者、タグ等で検索..." 
+            onkeyup="filterData()"
+            class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm text-sm"
+          >
+        </div>
+        <div id="itemCount" class="text-sm font-medium text-gray-500">
+          全 0 件
+        </div>
+      </div>
+
+      <!-- プリセットフィルターボタンエリア -->
+      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1">
+            <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+            クイックフィルター
+          </span>
+          <button onclick="clearAllFilters()" class="text-xs text-indigo-600 hover:underline hidden" id="clearFilterBtn">
+            すべてのフィルターを解除
+          </button>
+        </div>
+
+        <!-- 作字タイプ -->
+        <div class="space-y-1">
+          <div class="text-xs text-gray-400 font-medium">作字タイプ:</div>
+          <div id="artTypeFilterGroup" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Ktype (作字タイプ「教育文字」選択時のみ動的表示) -->
+        <div id="ktypeContainer" class="space-y-1 hidden">
+          <div class="text-xs text-gray-400 font-medium">Ktype:</div>
+          <div id="ktypeFilterGroup" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Atype (作字タイプ「アンビグラム」選択時のみ動的表示) -->
+        <div id="atypeContainer" class="space-y-1 hidden">
+          <div class="text-xs text-gray-400 font-medium">Atype:</div>
+          <div id="atypeFilterGroup" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Tag -->
+        <div class="space-y-1">
+          <div class="text-xs text-gray-400 font-medium">Tag:</div>
+          <div id="tagFilterGroup" class="flex flex-wrap gap-1.5"></div>
+        </div>
+      </div>
+
+      <!-- 新規追加フォーム -->
+      <details class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden group">
+        <summary class="flex items-center justify-between px-6 py-4 cursor-pointer select-none font-semibold text-gray-800 hover:bg-gray-50 transition-colors">
+          <span class="flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
+            新規作品の追加
+          </span>
+          <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform"></i>
+        </summary>
+        
+        <div class="p-6 border-t border-gray-100 bg-gray-50/50 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">タイトル <span class="text-red-500">*</span></label>
+              <input type="text" id="newTitle" placeholder="作品タイトル" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">制作者名</label>
+              <input type="text" id="newAuthor" placeholder="作者名" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">投稿URL</label>
+              <input type="text" id="newUrl" placeholder="https://..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">作字タイプ</label>
+              <input type="text" id="newArtType" placeholder="例: 教育文字, アンビグラム, 作字" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Ktype (カンマ区切り)</label>
+              <input type="text" id="newKtypes" placeholder="教育文字, 鵺文字" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Atype (カンマ区切り)</label>
+              <input type="text" id="newAtypes" placeholder="回転型, 鏡像型..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Tag</label>
+              <input type="text" id="newTag" placeholder="教育文字展覧会" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+          
+          <div class="flex justify-end pt-2">
+            <button onclick="addData()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-medium text-sm rounded-lg hover:bg-indigo-700 transition-colors shadow-md">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              追加する
+            </button>
+          </div>
+        </div>
+      </details>
+
+    </div>
+
+    <!-- 作品カードギャラリーグリッド -->
+    <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- JavaScriptで自動挿入されます -->
+    </div>
+
+  </main>
+
+  <script>
+    // デフォルトのフィルター定義
+    const DEFAULT_FILTER_CONFIG = {
+      artType: ["教育文字", "アンビグラム", "作字"],
+      ktype: ["教育文字", "鵺文字"],
+      atype: ["内包型", "振動型", "回転型", "鏡像型", "重畳型", "敷詰回転", "敷詰鏡像", "敷詰図地反転", "敷詰その他"],
+      tag: ["教育文字展覧会", "全て教育文字の所為です", "月ア", "鵲鯖不定期お題", "今日鯖不定期お題", "展覧会毎月お題"]
+    };
+
+    let filterConfig = { ...DEFAULT_FILTER_CONFIG };
+    let database = [];
+
+    // 現在選択中のフィルター状態（配列で複数保持）
+    let activeFilters = {
+      artType: [],
+      ktype: [],
+      atype: [],
+      tag: []
+    };
+
+    window.onload = function() {
+      // データベース読み込み
+      const savedData = localStorage.getItem('ambigram_db_v3_data');
+      if (savedData) {
+        try {
+          database = JSON.parse(savedData);
+        } catch (e) {
+          console.error("LocalStorageからの読み込み失敗", e);
+        }
+      }
+
+      // フィルター設定読み込み
+      const savedConfig = localStorage.getItem('ambigram_filter_config');
+      if (savedConfig) {
+        try {
+          filterConfig = JSON.parse(savedConfig);
+        } catch (e) {
+          console.error("FilterConfigの読み込み失敗", e);
+        }
+      }
+
+      renderFilterButtons();
+      renderCards(database);
+    };
+
+    function saveToLocalStorage() {
+      localStorage.setItem('ambigram_db_v3_data', JSON.stringify(database));
+    }
+
+    function saveFilterConfigToLocalStorage() {
+      localStorage.setItem('ambigram_filter_config', JSON.stringify(filterConfig));
+    }
+
+    // フィルターボタンの動的生成
+    function renderFilterButtons() {
+      renderCategoryButtons('artType', 'artTypeFilterGroup', 'bg-indigo-50 text-indigo-700 border-indigo-200');
+      renderCategoryButtons('ktype', 'ktypeFilterGroup', 'bg-gray-200 text-gray-800 border-gray-300');
+      renderCategoryButtons('atype', 'atypeFilterGroup', 'bg-purple-100 text-purple-800 border-purple-300');
+      renderCategoryButtons('tag', 'tagFilterGroup', 'bg-amber-100 text-amber-800 border-amber-300', '#');
+    }
+
+    function renderCategoryButtons(category, containerId, activeStyleClass, prefix = '') {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+
+      (filterConfig[category] || []).forEach(val => {
+        const btn = document.createElement('button');
+        const isActive = activeFilters[category].includes(val);
+
+        btn.className = `text-xs px-2.5 py-1 rounded-full border transition-all ${
+          isActive 
+            ? `${activeStyleClass} font-bold shadow-sm ring-1 ring-offset-1 ring-indigo-400` 
+            : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+        }`;
+        btn.textContent = `${prefix}${val}`;
+        btn.onclick = () => toggleFilter(category, val);
+        container.appendChild(btn);
+      });
+    }
+
+    // フィルター選択/解除のトグル処理
+    function toggleFilter(category, val) {
+      const index = activeFilters[category].indexOf(val);
+      if (index > -1) {
+        activeFilters[category].splice(index, 1);
+      } else {
+        activeFilters[category].push(val);
+      }
+
+      // 「教育文字」「アンビグラム」の選択解除に伴いサブフィルターも解除
+      if (category === 'artType') {
+        if (!activeFilters.artType.includes('教育文字')) activeFilters.ktype = [];
+        if (!activeFilters.artType.includes('アンビグラム')) activeFilters.atype = [];
+      }
+
+      updateFilterUI();
+      filterData();
+    }
+
+    function clearAllFilters() {
+      activeFilters = { artType: [], ktype: [], atype: [] };
+      document.getElementById("searchInput").value = "";
+      updateFilterUI();
+      renderCards(database);
+    }
+
+    // UIの表示制御（Ktype/Atypeのコンテナ表示切替含む）
+    function updateFilterUI() {
+      // 教育文字が選ばれている場合のみ Ktype を表示
+      const ktypeContainer = document.getElementById('ktypeContainer');
+      if (activeFilters.artType.includes('教育文字')) {
+        ktypeContainer.classList.remove('hidden');
+      } else {
+        ktypeContainer.classList.add('hidden');
+      }
+
+      // アンビグラムが選ばれている場合のみ Atype を表示
+      const atypeContainer = document.getElementById('atypeContainer');
+      if (activeFilters.artType.includes('アンビグラム')) {
+        atypeContainer.classList.remove('hidden');
+      } else {
+        atypeContainer.classList.add('hidden');
+      }
+
+      // リセットボタン表示判定
+      const hasActiveFilter = Object.values(activeFilters).some(arr => arr.length > 0) || document.getElementById("searchInput").value.trim() !== "";
+      const clearBtn = document.getElementById('clearFilterBtn');
+      if (hasActiveFilter) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+
+      renderFilterButtons();
+    }
+
+    // フィルタリング処理（AND条件）
+    function filterData() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+
+      const filtered = database.filter(item => {
+        // キーワード検索
+        const matchesQuery = !query || Object.values(item).some(val => String(val).toLowerCase().includes(query));
+        if (!matchesQuery) return false;
+
+        // 作字タイプ（いずれかに一致）
+        if (activeFilters.artType.length > 0) {
+          const itemArtType = item.artType || '';
+          const match = activeFilters.artType.some(val => itemArtType.includes(val));
+          if (!match) return false;
+        }
+
+        // Ktype（いずれかに一致）
+        if (activeFilters.artType.includes('教育文字') && activeFilters.ktype.length > 0) {
+          const match = activeFilters.ktype.some(val => 
+            Object.keys(item).some(k => k.startsWith('ktype') && String(item[k]).includes(val))
+          );
+          if (!match) return false;
+        }
+
+        // Atype（いずれかに一致）
+        if (activeFilters.artType.includes('アンビグラム') && activeFilters.atype.length > 0) {
+          const match = activeFilters.atype.some(val => 
+            Object.keys(item).some(a => a.startsWith('atype') && String(item[a]).includes(val))
+          );
+          if (!match) return false;
+        }
+
+        // Tag（いずれかに一致）
+        if (activeFilters.tag.length > 0) {
+          const tagVal = item.Tag || item.tag || '';
+          const match = activeFilters.tag.some(val => tagVal.includes(val));
+          if (!match) return false;
+        }
+
+        return true;
+      });
+
+      renderCards(filtered);
+    }
+
+    function renderCards(data) {
+      const grid = document.getElementById("cardGrid");
+      const countLabel = document.getElementById("itemCount");
+      grid.innerHTML = "";
+
+      countLabel.textContent = `全 ${data.length} 件`;
+
+      if (!data || data.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-16 text-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+            <i data-lucide="folder-open" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+            <p class="font-medium text-gray-500">該当するデータが存在しません</p>
+            <p class="text-xs text-gray-400 mt-1">検索条件を変更するか、新規作品を追加してください。</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      data.forEach((item) => {
+        const origIndex = database.indexOf(item);
+        
+        const ktypes = [];
+        const atypes = [];
+        Object.keys(item).forEach(key => {
+          if (key.startsWith('ktype') && item[key]) ktypes.push(item[key]);
+          if (key.startsWith('atype') && item[key]) atypes.push(item[key]);
+        });
+
+        const tag = item.Tag || item.tag || '';
+        const initial = (item.title || 'A').charAt(0).toUpperCase();
+
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between group";
+
+        card.innerHTML = `
+          <div>
+            <div class="h-40 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-6 relative">
+              <div class="w-20 h-20 rounded-2xl bg-white/80 backdrop-blur shadow-sm flex items-center justify-center text-indigo-600 text-3xl font-black transition-transform group-hover:scale-105">
+                ${initial}
+              </div>
+              <button onclick="deleteData(${origIndex})" title="削除" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 hover:bg-red-50 text-gray-400 hover:text-red-600 flex items-center justify-center transition-colors shadow-sm">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <div class="p-5 space-y-4">
+              <div>
+                <div class="flex items-start justify-between gap-2 mb-1">
+                  <h3 
+                    contenteditable="true" 
+                    onblur="updateData(${origIndex}, 'title', this.innerText)"
+                    class="font-bold text-gray-900 text-lg leading-snug outline-none focus:bg-indigo-50/50 rounded px-1 transition-colors"
+                  >${item.title || '無題'}</h3>
+
+                  ${item.artType ? `
+                    <span class="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      ${item.artType}
+                    </span>
+                  ` : ''}
+                </div>
+
+                <p class="text-sm text-gray-500 px-1">
+                  作者: <span contenteditable="true" onblur="updateData(${origIndex}, 'author', this.innerText)" class="outline-none focus:bg-indigo-50/50 rounded">${item.author || '未設定'}</span>
+                </p>
+              </div>
+
+              <div class="flex flex-wrap gap-1.5 text-xs">
+                ${ktypes.map(k => `<span class="px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-mono">K:${k}</span>`).join('')}
+                ${atypes.map(a => `<span class="px-2 py-0.5 rounded bg-purple-50 text-purple-600 font-mono">A:${a}</span>`).join('')}
+                ${tag ? `<span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100">#${tag}</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="p-5 pt-0">
+            ${item.url ? `
+              <a 
+                href="${item.url}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="inline-flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm"
+              >
+                <span>作品を見る</span>
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
+            ` : `
+              <button disabled class="inline-flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed">
+                <span>リンクなし</span>
+              </button>
+            `}
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    function updateData(index, key, value) {
+      database[index][key] = value.trim();
+      saveToLocalStorage();
+    }
+
+    function addData() {
+      const title = document.getElementById("newTitle").value.trim();
+      const author = document.getElementById("newAuthor").value.trim();
+      const url = document.getElementById("newUrl").value.trim();
+      const artType = document.getElementById("newArtType").value.trim();
+      const tag = document.getElementById("newTag").value.trim();
+      const ktypesRaw = document.getElementById("newKtypes").value.split(',').map(s => s.trim()).filter(Boolean);
+      const atypesRaw = document.getElementById("newAtypes").value.split(',').map(s => s.trim()).filter(Boolean);
+
+      if (!title) {
+        alert("タイトルを入力してください。");
+        return;
+      }
+
+      const newItem = { title, author, url, artType };
+
+      ktypesRaw.forEach((v, idx) => { newItem[`ktype${idx + 1}`] = v; });
+      atypesRaw.forEach((v, idx) => { newItem[`atype${idx + 1}`] = v; });
+      if (tag) newItem["Tag"] = tag;
+
+      database.push(newItem);
+      saveToLocalStorage();
+
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newAuthor").value = "";
+      document.getElementById("newUrl").value = "";
+      document.getElementById("newArtType").value = "";
+      document.getElementById("newKtypes").value = "";
+      document.getElementById("newAtypes").value = "";
+      document.getElementById("newTag").value = "";
+
+      renderCards(database);
+    }
+
+    function deleteData(index) {
+      if (confirm("本当に削除しますか？")) {
+        database.splice(index, 1);
+        saveToLocalStorage();
+        filterData();
+      }
+    }
+
+    // データベースJSONエクスポート/インポート
+    function exportJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(database, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "ambigram_database.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          if (Array.isArray(importedData)) {
+            database = importedData;
+            saveToLocalStorage();
+            filterData();
+            alert("JSONデータを正常に読み込みました。");
+          } else {
+            alert("無効なJSONフォーマットです。配列形式を選択してください。");
+          }
+        } catch (err) {
+          alert("JSONファイルの解析に失敗しました。");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // フィルター設定JSONエクスポート/インポート
+    function exportFilterConfig() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filterConfig, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "filter_config.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importFilterConfig(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedConfig = JSON.parse(e.target.result);
+          if (typeof importedConfig === 'object' && !Array.isArray(importedConfig)) {
+            filterConfig = importedConfig;
+            saveFilterConfigToLocalStorage();
+            renderFilterButtons();
+            filterData();
+            alert("フィルター設定を更新しました。");
+          } else {
+            alert("無効な設定JSONフォーマットです。");
+          }
+        } catch (err) {
+          alert("設定ファイルの解析に失敗しました。");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+  </script>
+</body>
+</html>
