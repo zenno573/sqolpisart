@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <!-- フィルターパネル -->
+      <!-- クイックフィルターパネル -->
       <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-4">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1">
@@ -82,6 +82,74 @@
         </div>
       </div>
 
+      <!-- 新規登録モード (縦並び & ボタン選択形式) -->
+      <details class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden group">
+        <summary class="flex items-center justify-between px-6 py-4 cursor-pointer select-none font-semibold text-gray-800 hover:bg-gray-50 transition-colors">
+          <span class="flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
+            新規作品の追加
+          </span>
+          <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform"></i>
+        </summary>
+        
+        <div class="p-6 border-t border-gray-100 bg-gray-50/50 space-y-6">
+          
+          <!-- 基本情報入力 -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">タイトル <span class="text-red-500">*</span></label>
+              <input type="text" id="newTitle" placeholder="作品タイトルを入力" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">制作者名</label>
+              <input type="text" id="newAuthor" placeholder="作者名を入力" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">投稿URL</label>
+              <input type="text" id="newUrl" placeholder="https://..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+
+          <!-- 分類選択（縦に配列） -->
+          <div class="space-y-5 pt-2 border-t border-gray-200/60">
+            
+            <!-- 作字タイプ -->
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-gray-600">作字タイプ</label>
+              <div id="newFormArtTypeGroup" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+            <!-- Ktype (作字タイプ「教育文字」選択時表示) -->
+            <div id="newFormKtypeSection" class="space-y-1.5 hidden">
+              <label class="block text-xs font-semibold text-gray-600">Ktype (複数選択可)</label>
+              <div id="newFormKtypeGroup" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+            <!-- Atype (作字タイプ「アンビグラム」選択時表示) -->
+            <div id="newFormAtypeSection" class="space-y-1.5 hidden">
+              <label class="block text-xs font-semibold text-gray-600">Atype (複数選択可)</label>
+              <div id="newFormAtypeGroup" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+            <!-- Tag -->
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-gray-600">Tag (複数選択可)</label>
+              <div id="newFormTagGroup" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+          </div>
+
+          <div class="flex justify-end pt-2 border-t border-gray-200/60">
+            <button onclick="addData()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-medium text-sm rounded-lg hover:bg-indigo-700 transition-colors shadow-md">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              追加する
+            </button>
+          </div>
+        </div>
+      </details>
+
     </div>
 
     <!-- ギャラリーグリッド -->
@@ -94,6 +162,14 @@
     let database = [];
     let filterConfig = { artType: [], ktype: [], atype: [], tag: [] };
     let activeFilters = { artType: [], ktype: [], atype: [], tag: [] };
+
+    // 新規追加フォームの選択状態
+    let newFormSelection = {
+      artType: '',
+      ktypes: [],
+      atypes: [],
+      tags: []
+    };
 
     // スタイル定義マップ
     const CATEGORY_STYLES = {
@@ -135,10 +211,11 @@
     // 一括再描画・更新処理
     function renderUI() {
       renderFilterButtons();
+      renderNewFormButtons();
       applyFilters();
     }
 
-    // フィルターボタン生成
+    // --- フィルター用ボタン生成 ---
     function renderFilterButtons() {
       const categories = [
         { key: 'artType', containerId: 'artTypeGroup' },
@@ -174,7 +251,94 @@
       document.getElementById('clearFilterBtn').classList.toggle('hidden', !hasActive);
     }
 
-    // トグル処理
+    // --- 新規登録フォーム用ボタン生成 ---
+    function renderNewFormButtons() {
+      // 作字タイプ（単一選択）
+      const artTypeContainer = document.getElementById('newFormArtTypeGroup');
+      artTypeContainer.innerHTML = '';
+      (filterConfig.artType || []).forEach(val => {
+        const isActive = newFormSelection.artType === val;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `text-xs px-2.5 py-1 rounded-full border transition-all ${
+          isActive ? CATEGORY_STYLES.artType.active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+        }`;
+        btn.textContent = val;
+        btn.onclick = () => {
+          newFormSelection.artType = isActive ? '' : val;
+          if (newFormSelection.artType !== '教育文字') newFormSelection.ktypes = [];
+          if (newFormSelection.artType !== 'アンビグラム') newFormSelection.atypes = [];
+          renderNewFormButtons();
+        };
+        artTypeContainer.appendChild(btn);
+      });
+
+      // Ktype（複数選択）
+      const ktypeContainer = document.getElementById('newFormKtypeGroup');
+      ktypeContainer.innerHTML = '';
+      (filterConfig.ktype || []).forEach(val => {
+        const isActive = newFormSelection.ktypes.includes(val);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `text-xs px-2.5 py-1 rounded-full border transition-all ${
+          isActive ? CATEGORY_STYLES.ktype.active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+        }`;
+        btn.textContent = val;
+        btn.onclick = () => {
+          toggleArrayItem(newFormSelection.ktypes, val);
+          renderNewFormButtons();
+        };
+        ktypeContainer.appendChild(btn);
+      });
+
+      // Atype（複数選択）
+      const atypeContainer = document.getElementById('newFormAtypeGroup');
+      atypeContainer.innerHTML = '';
+      (filterConfig.atype || []).forEach(val => {
+        const isActive = newFormSelection.atypes.includes(val);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `text-xs px-2.5 py-1 rounded-full border transition-all ${
+          isActive ? CATEGORY_STYLES.atype.active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+        }`;
+        btn.textContent = val;
+        btn.onclick = () => {
+          toggleArrayItem(newFormSelection.atypes, val);
+          renderNewFormButtons();
+        };
+        atypeContainer.appendChild(btn);
+      });
+
+      // Tag（複数選択）
+      const tagContainer = document.getElementById('newFormTagGroup');
+      tagContainer.innerHTML = '';
+      (filterConfig.tag || []).forEach(val => {
+        const isActive = newFormSelection.tags.includes(val);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `text-xs px-2.5 py-1 rounded-full border transition-all ${
+          isActive ? CATEGORY_STYLES.tag.active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+        }`;
+        btn.textContent = `#${val}`;
+        btn.onclick = () => {
+          toggleArrayItem(newFormSelection.tags, val);
+          renderNewFormButtons();
+        };
+        tagContainer.appendChild(btn);
+      });
+
+      // 動的表示制御
+      document.getElementById('newFormKtypeSection').classList.toggle('hidden', newFormSelection.artType !== '教育文字');
+      document.getElementById('newFormAtypeSection').classList.toggle('hidden', newFormSelection.artType !== 'アンビグラム');
+    }
+
+    function toggleArrayItem(arr, item) {
+      const idx = arr.indexOf(item);
+      if (idx > -1) arr.splice(idx, 1);
+      else arr.push(item);
+    }
+
+    // フィルタートグル処理
     function toggleFilter(category, val) {
       const idx = activeFilters[category].indexOf(val);
       if (idx > -1) {
@@ -183,7 +347,6 @@
         activeFilters[category].push(val);
       }
 
-      // 親カテゴリ解除に伴うサブカテゴリ初期化
       if (category === 'artType') {
         if (!activeFilters.artType.includes('教育文字')) activeFilters.ktype = [];
         if (!activeFilters.artType.includes('アンビグラム')) activeFilters.atype = [];
@@ -205,18 +368,15 @@
       const query = document.getElementById("searchInput").value.toLowerCase();
 
       const filtered = database.filter(item => {
-        // キーワード検索
         if (query && !Object.values(item).some(val => String(val).toLowerCase().includes(query))) {
           return false;
         }
 
-        // 作字タイプ
         if (activeFilters.artType.length > 0) {
           const artType = item.artType || '';
           if (!activeFilters.artType.some(v => artType.includes(v))) return false;
         }
 
-        // Ktype
         if (activeFilters.artType.includes('教育文字') && activeFilters.ktype.length > 0) {
           const hasK = activeFilters.ktype.some(v => 
             Object.keys(item).some(k => k.startsWith('ktype') && String(item[k]).includes(v))
@@ -224,7 +384,6 @@
           if (!hasK) return false;
         }
 
-        // Atype
         if (activeFilters.artType.includes('アンビグラム') && activeFilters.atype.length > 0) {
           const hasA = activeFilters.atype.some(v => 
             Object.keys(item).some(a => a.startsWith('atype') && String(item[a]).includes(v))
@@ -232,7 +391,6 @@
           if (!hasA) return false;
         }
 
-        // Tag
         if (activeFilters.tag.length > 0) {
           const tagVal = item.Tag || item.tag || '';
           if (!activeFilters.tag.some(v => tagVal.includes(v))) return false;
@@ -242,6 +400,40 @@
       });
 
       renderCards(filtered);
+    }
+
+    // 新規作品の追加処理
+    function addData() {
+      const title = document.getElementById("newTitle").value.trim();
+      if (!title) { alert("タイトルを入力してください。"); return; }
+
+      const newItem = {
+        title,
+        author: document.getElementById("newAuthor").value.trim(),
+        url: document.getElementById("newUrl").value.trim(),
+        artType: newFormSelection.artType
+      };
+
+      if (newFormSelection.artType === '教育文字') {
+        newFormSelection.ktypes.forEach((v, idx) => { newItem[`ktype${idx + 1}`] = v; });
+      }
+      if (newFormSelection.artType === 'アンビグラム') {
+        newFormSelection.atypes.forEach((v, idx) => { newItem[`atype${idx + 1}`] = v; });
+      }
+      if (newFormSelection.tags.length > 0) {
+        newItem["Tag"] = newFormSelection.tags.join(', ');
+      }
+
+      database.push(newItem);
+
+      // 入力フォームのクリア
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newAuthor").value = "";
+      document.getElementById("newUrl").value = "";
+      newFormSelection = { artType: '', ktypes: [], atypes: [], tags: [] };
+
+      renderNewFormButtons();
+      applyFilters();
     }
 
     // ギャラリー描画
